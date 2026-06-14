@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#1B3F72" />
+  <title>Luisa — Tu salud, en una conversación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #F5F7FA;
+      color: #0F1F3D;
+      overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    .navy { color: #1B3F72; }
+    .bg-navy { background: #1B3F72; }
+    .teal { color: #00C9A7; }
+    .bg-teal { background: #00C9A7; }
+    .gradient-luisa {
+      background: linear-gradient(135deg, #1B3F72 0%, #00C9A7 100%);
+    }
+
+    /* Animaciones */
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.35s ease-out; }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* Scroll suave en feed */
+    .scroll-feed { scrollbar-width: none; }
+    .scroll-feed::-webkit-scrollbar { display: none; }
+
+    /* Card del expediente */
+    .chat-card {
+      transition: background 0.15s;
+    }
+    .chat-card:active { background: #ECF4F9; }
+
+    /* Iconos del post */
+    .post-icon-btn {
+      transition: transform 0.1s;
+    }
+    .post-icon-btn:active { transform: scale(0.92); }
+
+    /* FAB */
+    .fab {
+      box-shadow: 0 8px 24px rgba(0, 201, 167, 0.4);
+    }
+    .fab:active { transform: scale(0.92); }
+
+    /* Esqueleto de carga */
+    .skeleton {
+      background: linear-gradient(90deg, #E8EDF3 25%, #F5F7FA 50%, #E8EDF3 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Logo Luisa */
+    .logo-luisa {
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-size: 1.5rem;
+    }
+    .logo-luisa .lu { color: #1B3F72; }
+    .logo-luisa .is { color: #1B3F72; }
+    .logo-luisa .a { color: #00C9A7; }
+
+    /* Estado del post */
+    .ia-pendiente {
+      background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+      color: #92400E;
+    }
+    .ia-procesando {
+      background: linear-gradient(90deg, #DBEAFE 0%, #BFDBFE 100%);
+      color: #1E40AF;
+    }
+    .ia-completado {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col">
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                          PANTALLA DE LOGIN                            -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-login" class="h-screen flex flex-col items-center justify-center px-8 gradient-luisa text-white">
+    <div class="text-center mb-12 fade-in">
+      <div class="text-6xl font-extrabold mb-2 tracking-tight">
+        <span class="text-white">Lu</span><span class="text-white opacity-80">is</span><span class="text-teal-200">a</span>
+      </div>
+      <p class="text-white/80 text-sm tracking-widest uppercase">Inteligencia Clínica</p>
+    </div>
+
+    <div class="w-full max-w-sm fade-in">
+      <h1 class="text-2xl font-bold mb-3 text-center">Tu salud en una conversación</h1>
+      <p class="text-white/80 text-center mb-8 text-sm leading-relaxed">
+        Toma foto a tus recetas, estudios y notas. Luisa los organiza por ti.
+      </p>
+
+      <div class="bg-white rounded-2xl p-5 shadow-2xl">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          Correo electrónico
+        </label>
+        <input
+          id="login-email"
+          type="email"
+          placeholder="tu@correo.com"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+        />
+        <button
+          id="btn-login"
+          onclick="enviarMagicLink()"
+          class="w-full mt-4 bg-teal py-3.5 rounded-xl font-bold text-white text-base active:scale-[0.98] transition">
+          Continuar
+        </button>
+
+        <div id="login-mensaje" class="hidden mt-4 p-3 rounded-lg text-sm text-center"></div>
+      </div>
+
+      <p class="text-center text-white/60 text-xs mt-6">
+        Sin contraseñas. Recibirás un enlace seguro en tu correo.
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                  PANTALLA 1: LISTA DE EXPEDIENTES                     -->
+  <!--                  (Estilo WhatsApp - lista de chats)                   -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-lista" class="hidden h-screen flex flex-col bg-white">
+    <!-- Header -->
+    <header class="px-5 pt-12 pb-4 gradient-luisa text-white">
+      <div class="flex items-center justify-between mb-1">
+        <div class="logo-luisa text-white">
+          <span class="text-white">Lu</span><span class="text-white opacity-90">is</span><span class="text-teal-200">a</span>
+        </div>
+        <button onclick="cerrarSesion()" class="text-white/80 text-sm">
+          Salir
+        </button>
+      </div>
+      <p class="text-white/80 text-xs">Tu salud en una conversación</p>
+
+      <!-- Buscador -->
+      <div class="relative mt-4">
+        <input
+          type="text"
+          placeholder="Buscar en mis expedientes..."
+          class="w-full pl-10 pr-4 py-2.5 bg-white/95 rounded-full text-gray-900 text-sm placeholder-gray-500 focus:outline-none"
+        />
+        <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+      </div>
+    </header>
+
+    <!-- Lista de expedientes -->
+    <div class="flex-1 overflow-y-auto scroll-feed">
+      <div id="lista-expedientes" class="divide-y divide-gray-100">
+        <!-- Items se generan con JS -->
+      </div>
+
+      <!-- Botón agregar nuevo perfil familiar -->
+      <button onclick="agregarFamiliar()" class="w-full p-4 text-left flex items-center gap-4 chat-card">
+        <div class="w-14 h-14 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-2xl text-gray-400">
+          +
+        </div>
+        <div>
+          <div class="font-semibold text-gray-700">Agregar familiar</div>
+          <div class="text-xs text-gray-500">Mamá, papá, hijo, pareja...</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                  PANTALLA 2: FEED DEL EXPEDIENTE                      -->
+  <!--                  (Estilo Instagram - posts con iconos)                -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-feed" class="hidden h-screen flex flex-col bg-gray-50">
+    <!-- Header -->
+    <header class="px-5 pt-12 pb-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div class="flex items-center gap-3 mb-3">
+        <button onclick="volver('lista')" class="text-2xl text-gray-700">
+          ←
+        </button>
+        <div class="w-10 h-10 rounded-full bg-navy text-white flex items-center justify-center font-bold text-sm" id="feed-avatar">
+          RA
+        </div>
+        <div class="flex-1">
+          <div class="font-bold text-gray-900" id="feed-nombre">Roberto Aguilar</div>
+          <div class="text-xs text-gray-500" id="feed-meta">58 años · O+</div>
+        </div>
+        <button class="text-xl text-gray-600">🔍</button>
+      </div>
+
+      <!-- Tarjeta sticky de datos críticos -->
+      <div class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-3 border border-teal-100">
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Sangre</div>
+            <div class="font-bold text-navy text-sm" id="critico-sangre">O+</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Alergias</div>
+            <div class="font-bold text-red-600 text-sm" id="critico-alergias">Penicilina</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Meds activos</div>
+            <div class="font-bold text-navy text-sm" id="critico-meds">3</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Feed scrollable -->
+    <div class="flex-1 overflow-y-auto scroll-feed px-4 py-4 pb-24">
+      <div id="feed-eventos" class="space-y-3">
+        <!-- Posts se generan con JS -->
+      </div>
+    </div>
+
+    <!-- FAB: Botón flotante de agregar -->
+    <button
+      onclick="abrirNuevoEvento()"
+      class="fixed bottom-6 right-6 w-16 h-16 bg-teal rounded-full text-white text-3xl font-light flex items-center justify-center fab z-20">
+      +
+    </button>
+
+    <!-- Botón flotante de Luisa IA -->
+    <button
+      onclick="abrirChatLuisa()"
+      class="fixed bottom-6 left-6 px-4 py-3 bg-navy text-white rounded-full text-sm font-semibold flex items-center gap-2 fab z-20">
+      <span>💬</span>
+      <span>Luisa</span>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--           PANTALLA 3: CAPTURA DE EVENTO (modal botón +)              -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-nuevo" class="hidden fixed inset-0 bg-black/50 z-30 flex items-end">
+    <div class="w-full bg-white rounded-t-3xl p-6 slide-up">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">¿Qué pasó?</h2>
+          <p class="text-sm text-gray-500">Luisa lo organizará por ti</p>
+        </div>
+        <button onclick="cerrarNuevoEvento()" class="text-2xl text-gray-400">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Opción 1: Subir documento -->
+        <button onclick="capturarDocumento()" class="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-2xl flex items-center gap-4 text-left">
+          <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-2xl">
+            📷
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-gray-900">Subí una receta o documento</div>
+            <div class="text-xs text-gray-600">Luisa lee la foto y la organiza sola</div>
+          </div>
+          <span class="text-gray-400">→</span>
+        </button>
+
+        <!-- Opción 2: Medicamento -->
+        <button onclick="registrarMedicamento()" class="w-full p-4 bg-teal-50 hover:bg-teal-100 rounded-2xl flex items-center gap-4 text-left">
+          <div class="w-12 h-12 bg-teal rounded-xl flex items-center justify-center text-2xl">
+            💊
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-gray-900">Tomé un medicamento</div>
+            <div class="text-xs text-gray-600">Registra que ya te lo tomaste</div>
+          </div>
+          <span class="text-gray-400">→</span>
+        </button>
+
+        <!-- Opción 3: Nota libre -->
+        <button onclick="notaLibre()" class="w-full p-4 bg-amber-50 hover:bg-amber-100 rounded-2xl flex items-center gap-4 text-left">
+          <div class="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center text-2xl">
+            📝
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-gray-900">Nota libre</div>
+            <div class="text-xs text-gray-600">Cómo me sentí, qué pasó hoy</div>
+          </div>
+          <span class="text-gray-400">→</span>
+        </button>
+      </div>
+
+      <!-- Input oculto para captura de foto -->
+      <input
+        type="file"
+        id="input-foto"
+        accept="image/*"
+        capture="environment"
+        class="hidden"
+        onchange="procesarFoto(event)"
+      />
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                  PANTALLA 4: CHAT CON LUISA (IA)                      -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-chat" class="hidden h-screen flex flex-col bg-white">
+    <header class="px-5 pt-12 pb-4 gradient-luisa text-white">
+      <div class="flex items-center gap-3">
+        <button onclick="volver('feed')" class="text-2xl text-white">←</button>
+        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+          <span class="logo-luisa text-sm"><span class="lu">L</span><span class="a">u</span></span>
+        </div>
+        <div class="flex-1">
+          <div class="font-bold">Luisa</div>
+          <div class="text-xs text-white/80">Pregúntale sobre tu expediente</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3" id="chat-mensajes">
+      <div class="bg-gray-100 rounded-2xl rounded-tl-sm p-3 max-w-[85%]">
+        <p class="text-sm text-gray-800">
+          Hola Roberto 👋 Veo que estás tomando prednisona desde el 8 de mayo. ¿Cómo te has sentido? ¿Algún cambio que quieras anotar?
+        </p>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-gray-100 bg-white">
+      <div class="flex gap-2 items-center">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Pregúntale algo a Luisa..."
+          class="flex-1 px-4 py-3 bg-gray-100 rounded-full text-sm focus:outline-none"
+        />
+        <button class="w-12 h-12 bg-teal rounded-full text-white text-xl">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                          SCRIPTS                                       -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <script>
+    // ───────────────────────────────────────────────────────
+    // SUPABASE — cliente real
+    // ───────────────────────────────────────────────────────
+    const SUPABASE_URL = 'https://isxspjlwuzbbtpamkknq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzeHNwamx3dXpiYnRwYW1ra25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYwMjMsImV4cCI6MjA5NTM4MjAyM30.D5iWO9K7137hFW_pBx9xYASHFfnyUcDthi9_A-6pksA';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ───────────────────────────────────────────────────────
+    // ESTADO GLOBAL
+    // ───────────────────────────────────────────────────────
+    let perfilActual = null;
+    let usuarioActual = null; // objeto auth de Supabase
+    let perfilDB = null;      // fila de perfiles_luisa del usuario
+    let eventosDB = [];       // eventos_salud del usuario
+
+    // Expedientes familiares — mock hasta validar con usuarios reales
+    const expedientesMock = [
+      {
+        id: '1',
+        nombre: 'Roberto Aguilar',
+        edad: 58,
+        sangre: 'O+',
+        alergias: 'Penicilina',
+        medsActivos: 3,
+        avatar: 'RA',
+        avatarColor: '#1B3F72',
+        ultimoEvento: 'Receta del Dr. Carrillo · Prednisona 20mg',
+        ultimaFecha: '23 nov',
+        esYo: true,
+        eventos: [
+          {
+            id: 'e1',
+            tipo: 'documento',
+            fecha: '8 May 2025',
+            fechaCompleta: 'Jueves 8 de mayo, 10:30 AM',
+            titulo: 'Receta - Centro Dermatológico',
+            medico: 'Dra. Alejandra Yasbeth Carrillo Guajardo',
+            especialidad: 'Dermatología',
+            resumen: 'Tratamiento para alopecia con prednisona en pauta descendente de 6 semanas',
+            medicamentos: 3,
+            alertas: 1,
+            estadoIA: 'completado',
+            foto: '📄'
+          },
+          {
+            id: 'e2',
+            tipo: 'medicamento',
+            fecha: 'Hoy 8:00 AM',
+            fechaCompleta: 'Hoy 8:00 AM',
+            titulo: 'Tomé Prednisona 20mg',
+            resumen: 'Semana 1 - 2½ tabletas en ayuno',
+            estadoIA: 'sin_ia',
+            foto: '💊'
+          },
+          {
+            id: 'e3',
+            tipo: 'nota_libre',
+            fecha: 'Ayer',
+            fechaCompleta: 'Ayer 9:30 PM',
+            titulo: 'Dolor de cabeza leve',
+            resumen: 'Me dio dolor de cabeza después de comer. Tomé paracetamol y se me quitó en 30 min.',
+            estadoIA: 'sin_ia',
+            foto: '📝'
+          }
+        ]
+      },
+      {
+        id: '2',
+        nombre: 'Don Pedro (papá)',
+        edad: 78,
+        sangre: 'A+',
+        alergias: 'Ninguna',
+        medsActivos: 5,
+        avatar: 'DP',
+        avatarColor: '#00A88C',
+        ultimoEvento: 'Control de presión arterial',
+        ultimaFecha: '20 nov',
+        esYo: false,
+        eventos: []
+      },
+      {
+        id: '3',
+        nombre: 'Lucía (hija)',
+        edad: 12,
+        sangre: 'O+',
+        alergias: 'Nueces',
+        medsActivos: 0,
+        avatar: 'LU',
+        avatarColor: '#38BDF8',
+        ultimoEvento: 'Pediatra - Vacuna refuerzo',
+        ultimaFecha: '5 oct',
+        esYo: false,
+        eventos: []
+      }
+    ];
+
+    // ───────────────────────────────────────────────────────
+    // INICIALIZACIÓN
+    // ───────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Manejar callback del magic link (hash con access_token)
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) {
+        usuarioActual = session.user;
+        await cargarPerfilYMostrarLista();
+      } else {
+        mostrarLogin();
+      }
+
+      // Escuchar cambios de sesión (cuando el usuario llega del enlace del email)
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          usuarioActual = session.user;
+          await cargarPerfilYMostrarLista();
+        } else if (event === 'SIGNED_OUT') {
+          usuarioActual = null;
+          perfilDB = null;
+          eventosDB = [];
+          mostrarLogin();
+        }
+      });
+    });
+
+    // ───────────────────────────────────────────────────────
+    // LOGIN — Magic Link
+    // ───────────────────────────────────────────────────────
+    function mostrarLogin() {
+      ocultarTodo();
+      document.getElementById('screen-login').classList.remove('hidden');
+    }
+
+    async function enviarMagicLink() {
+      const email = document.getElementById('login-email').value.trim();
+      const mensaje = document.getElementById('login-mensaje');
+
+      if (!email || !email.includes('@')) {
+        mensaje.textContent = 'Ingresa un correo válido';
+        mensaje.className = 'mt-4 p-3 rounded-lg text-sm text-center bg-red-100 text-red-700';
+        mensaje.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      btn.classList.add('opacity-60');
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href }
+      });
+
+      if (error) {
+        mensaje.textContent = 'Error al enviar el enlace. Intenta de nuevo.';
+        mensaje.className = 'mt-4 p-3 rounded-lg text-sm text-center bg-red-100 text-red-700';
+        mensaje.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Continuar';
+        btn.classList.remove('opacity-60');
+        return;
+      }
+
+      mensaje.innerHTML = `
+        <div class="text-2xl mb-1">✉️</div>
+        <div class="font-semibold mb-1">Revisa tu correo</div>
+        <div class="text-xs opacity-80">Enviamos un enlace a <strong>${email}</strong></div>
+      `;
+      mensaje.className = 'mt-4 p-4 rounded-lg text-sm text-center bg-teal-100 text-teal-800';
+      mensaje.classList.remove('hidden');
+    }
+
+    async function cerrarSesion() {
+      await supabase.auth.signOut();
+    }
+
+    // ───────────────────────────────────────────────────────
+    // CARGA DE DATOS REALES
+    // ───────────────────────────────────────────────────────
+    async function cargarPerfilYMostrarLista() {
+      // Cargar perfil del usuario
+      const { data: perfil } = await supabase
+        .from('perfiles_luisa')
+        .select('*')
+        .eq('id', usuarioActual.id)
+        .single();
+
+      perfilDB = perfil;
+
+      // Cargar últimos eventos
+      const { data: eventos } = await supabase
+        .from('eventos_salud')
+        .select('*')
+        .eq('id_perfil', usuarioActual.id)
+        .order('fecha_evento', { ascending: false })
+        .limit(50);
+
+      eventosDB = eventos || [];
+      mostrarLista();
+    }
+
+    // ───────────────────────────────────────────────────────
+    // PANTALLA 1: Lista de expedientes
+    // ───────────────────────────────────────────────────────
+    function mostrarLista() {
+      ocultarTodo();
+      document.getElementById('screen-lista').classList.remove('hidden');
+
+      const lista = document.getElementById('lista-expedientes');
+      lista.innerHTML = '';
+
+      // Expediente real del usuario logueado
+      const nombre = perfilDB?.nombre_completo || usuarioActual?.email?.split('@')[0] || 'Mi expediente';
+      const iniciales = nombre.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+      const ultimoEvento = eventosDB[0]?.texto_libre || eventosDB[0]?.datos_ia?.titulo || 'Sin eventos aún';
+      const ultimaFecha = eventosDB[0] ? formatFecha(eventosDB[0].fecha_evento) : '';
+      const pct = perfilDB?.perfil_completo_pct || 0;
+
+      const itemYo = document.createElement('button');
+      itemYo.className = 'w-full p-4 text-left flex items-center gap-4 chat-card border-b border-gray-50';
+      itemYo.onclick = () => abrirExpedienteReal();
+      itemYo.innerHTML = `
+        <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+             style="background: #1B3F72">
+          ${iniciales}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <div class="font-bold text-gray-900 truncate">
+              ${nombre}
+              <span class="text-xs font-normal text-teal-600 ml-1">(tú)</span>
+            </div>
+            <div class="text-xs text-gray-400 flex-shrink-0 ml-2">${ultimaFecha}</div>
+          </div>
+          <div class="text-sm text-gray-500 truncate">${ultimoEvento}</div>
+          ${pct < 100 ? `<div class="mt-1.5 flex items-center gap-2">
+            <div class="flex-1 h-1 bg-gray-100 rounded-full">
+              <div class="h-1 rounded-full bg-teal-400" style="width:${pct}%"></div>
+            </div>
+            <span class="text-xs text-gray-400">${pct}% perfil</span>
+          </div>` : ''}
+        </div>
+      `;
+      lista.appendChild(itemYo);
+
+      // Familiares — mock por ahora
+      expedientesMock.forEach(exp => {
+        const item = document.createElement('button');
+        item.className = 'w-full p-4 text-left flex items-center gap-4 chat-card border-b border-gray-50';
+        item.onclick = () => abrirExpediente(exp.id);
+        item.innerHTML = `
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+               style="background: ${exp.avatarColor}">
+            ${exp.avatar}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="font-bold text-gray-900 truncate">${exp.nombre}</div>
+              <div class="text-xs text-gray-400 flex-shrink-0 ml-2">${exp.ultimaFecha}</div>
+            </div>
+            <div class="text-sm text-gray-500 truncate">${exp.ultimoEvento}</div>
+          </div>
+        `;
+        lista.appendChild(item);
+      });
+    }
+
+    function formatFecha(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const hoy = new Date();
+      const diff = Math.floor((hoy - d) / 86400000);
+      if (diff === 0) return 'Hoy';
+      if (diff === 1) return 'Ayer';
+      return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+    }
+
+    function agregarFamiliar() {
+      alert('Familiares disponibles después de la validación con 5 usuarios.');
+    }
+
+    // ───────────────────────────────────────────────────────
+    // PANTALLA 2: Feed del expediente (usuario real)
+    // ───────────────────────────────────────────────────────
+    function abrirExpedienteReal() {
+      perfilActual = null; // señal: estamos en el expediente real
+      ocultarTodo();
+      document.getElementById('screen-feed').classList.remove('hidden');
+
+      const nombre = perfilDB?.nombre_completo || usuarioActual?.email?.split('@')[0] || 'Mi expediente';
+      const iniciales = nombre.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+
+      document.getElementById('feed-avatar').textContent = iniciales;
+      document.getElementById('feed-avatar').style.background = '#1B3F72';
+      document.getElementById('feed-nombre').textContent = nombre;
+
+      const sangre = perfilDB?.tipo_sangre || '—';
+      const peso = perfilDB?.peso_kg ? `${perfilDB.peso_kg} kg` : '—';
+      document.getElementById('feed-meta').textContent = `${sangre} · ${peso}`;
+
+      document.getElementById('critico-sangre').textContent = sangre;
+      document.getElementById('critico-alergias').textContent = perfilDB?.alergias || 'Sin registrar';
+      document.getElementById('critico-meds').textContent = perfilDB?.medicamentos_actuales ? '✓' : '—';
+
+      // Aviso de perfil incompleto
+      const pct = perfilDB?.perfil_completo_pct || 0;
+      let avisoHTML = '';
+      if (pct < 100) {
+        avisoHTML = `
+          <div class="mx-4 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+            <span class="text-xl">⚠️</span>
+            <div class="flex-1">
+              <div class="text-xs font-semibold text-amber-800">Tu perfil está ${pct}% completo</div>
+              <div class="text-xs text-amber-700">Complétalo para que tenga valor real ante un médico.</div>
+            </div>
+            <button onclick="abrirPerfil()" class="text-xs font-bold text-amber-800 underline">Completar</button>
+          </div>`;
+      }
+
+      const feed = document.getElementById('feed-eventos');
+      feed.innerHTML = avisoHTML;
+
+      if (eventosDB.length === 0) {
+        feed.innerHTML += `
+          <div class="text-center py-20">
+            <div class="text-5xl mb-4">📭</div>
+            <div class="font-bold text-gray-700 mb-1">Aún no hay eventos</div>
+            <div class="text-sm text-gray-500">Toca el + para agregar el primero</div>
+          </div>`;
+        return;
+      }
+
+      eventosDB.forEach(evento => {
+        feed.appendChild(crearTarjetaEventoDB(evento));
+      });
+    }
+
+    // Feed del expediente (mock — familiares)
+    function abrirExpediente(id) {
+      perfilActual = expedientesMock.find(e => e.id === id);
+      if (!perfilActual) return;
+
+      ocultarTodo();
+      document.getElementById('screen-feed').classList.remove('hidden');
+
+      document.getElementById('feed-avatar').textContent = perfilActual.avatar;
+      document.getElementById('feed-avatar').style.background = perfilActual.avatarColor;
+      document.getElementById('feed-nombre').textContent = perfilActual.nombre;
+      document.getElementById('feed-meta').textContent = `${perfilActual.edad} años · ${perfilActual.sangre}`;
+      document.getElementById('critico-sangre').textContent = perfilActual.sangre;
+      document.getElementById('critico-alergias').textContent = perfilActual.alergias;
+      document.getElementById('critico-meds').textContent = perfilActual.medsActivos;
+
+      const feed = document.getElementById('feed-eventos');
+      feed.innerHTML = '';
+
+      if (!perfilActual.eventos || perfilActual.eventos.length === 0) {
+        feed.innerHTML = `
+          <div class="text-center py-20">
+            <div class="text-5xl mb-4">📭</div>
+            <div class="font-bold text-gray-700 mb-1">Aún no hay eventos</div>
+            <div class="text-sm text-gray-500">Toca el + para agregar el primero</div>
+          </div>`;
+        return;
+      }
+      perfilActual.eventos.forEach(e => feed.appendChild(crearTarjetaEvento(e)));
+    }
+
+    function crearTarjetaEventoDB(evento) {
+      // Adaptar formato DB al formato de tarjeta existente
+      const ia = evento.datos_ia || {};
+      const mock = {
+        id: evento.id,
+        tipo: evento.tipo_evento,
+        fechaCompleta: new Date(evento.fecha_evento).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }),
+        titulo: ia.titulo || (evento.tipo_evento === 'documento' ? 'Documento' : evento.tipo_evento === 'medicamento' ? 'Medicamento' : 'Nota'),
+        resumen: ia.resumen || evento.texto_libre || '',
+        medico: ia.medico || null,
+        especialidad: ia.especialidad || null,
+        medicamentos: ia.medicamentos?.length || null,
+        alertas: ia.alertas?.length || null,
+        estadoIA: evento.estado_ia,
+        foto: evento.tipo_evento === 'documento' ? '📄' : evento.tipo_evento === 'medicamento' ? '💊' : '📝'
+      };
+      return crearTarjetaEvento(mock);
+    }
+
+    function crearTarjetaEvento(evento) {
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-2xl p-4 shadow-sm border border-gray-100';
+
+      let badgeIA = '';
+      if (evento.estadoIA === 'completado') {
+        badgeIA = `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ia-completado font-semibold">✓ Organizado por Luisa</span>`;
+      } else if (evento.estadoIA === 'procesando') {
+        badgeIA = `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ia-procesando font-semibold">⏳ Luisa está leyendo...</span>`;
+      } else if (evento.estadoIA === 'pendiente') {
+        badgeIA = `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ia-pendiente font-semibold">⏱ Pendiente</span>`;
+      }
+
+      // Iconos según tipo de evento
+      let iconos = '';
+      if (evento.tipo === 'documento') {
+        iconos = `
+          <div class="flex gap-4 mt-3 pt-3 border-t border-gray-100">
+            ${evento.medicamentos ? `<button class="post-icon-btn flex flex-col items-center gap-0.5">
+              <span class="text-xl">💊</span>
+              <span class="text-xs text-gray-600 font-semibold">${evento.medicamentos}</span>
+            </button>` : ''}
+            ${evento.alertas ? `<button class="post-icon-btn flex flex-col items-center gap-0.5">
+              <span class="text-xl">⚠️</span>
+              <span class="text-xs text-red-600 font-semibold">${evento.alertas}</span>
+            </button>` : ''}
+            <button class="post-icon-btn flex flex-col items-center gap-0.5">
+              <span class="text-xl">📄</span>
+              <span class="text-xs text-gray-600 font-semibold">Ver</span>
+            </button>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="text-2xl">${evento.foto}</div>
+            <div>
+              <div class="font-bold text-gray-900 text-sm">${evento.titulo}</div>
+              <div class="text-xs text-gray-500">${evento.fechaCompleta}</div>
+            </div>
+          </div>
+          ${badgeIA}
+        </div>
+        ${evento.medico ? `<div class="text-xs text-gray-600 mb-2"><strong>${evento.medico}</strong> · ${evento.especialidad}</div>` : ''}
+        <div class="text-sm text-gray-700 leading-relaxed">${evento.resumen}</div>
+        ${iconos}
+      `;
+
+      return card;
+    }
+
+    // ───────────────────────────────────────────────────────
+    // PANTALLA 3: Captura de evento nuevo
+    // ───────────────────────────────────────────────────────
+    function abrirNuevoEvento() {
+      document.getElementById('screen-nuevo').classList.remove('hidden');
+    }
+
+    function cerrarNuevoEvento() {
+      document.getElementById('screen-nuevo').classList.add('hidden');
+    }
+
+    function capturarDocumento() {
+      document.getElementById('input-foto').click();
+    }
+
+    async function procesarFoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      cerrarNuevoEvento();
+
+      // Si es expediente de familiar (mock), comportamiento anterior
+      if (perfilActual) {
+        const nuevoEvento = {
+          id: 'e' + Date.now(), tipo: 'documento', fechaCompleta: 'Hace unos segundos',
+          titulo: 'Procesando documento...', resumen: 'Luisa está leyendo la foto.',
+          estadoIA: 'procesando', foto: '⏳'
+        };
+        perfilActual.eventos.unshift(nuevoEvento);
+        abrirExpediente(perfilActual.id);
+        setTimeout(() => {
+          nuevoEvento.titulo = 'Receta médica';
+          nuevoEvento.resumen = 'Documento procesado.';
+          nuevoEvento.estadoIA = 'completado';
+          nuevoEvento.foto = '📄';
+          nuevoEvento.medicamentos = 1;
+          abrirExpediente(perfilActual.id);
+        }, 3000);
+        return;
+      }
+
+      // Expediente real: subir foto + crear evento en BD
+      const ext = file.name.split('.').pop();
+      const path = `${usuarioActual.id}/${Date.now()}.${ext}`;
+
+      // Insertar evento en estado "procesando" para feedback inmediato
+      const { data: eventoInsertado } = await supabase
+        .from('eventos_salud')
+        .insert({ id_perfil: usuarioActual.id, tipo_evento: 'documento', estado_ia: 'procesando' })
+        .select()
+        .single();
+
+      // Refrescar feed con estado procesando
+      const { data: eventos } = await supabase
+        .from('eventos_salud')
+        .select('*')
+        .eq('id_perfil', usuarioActual.id)
+        .order('fecha_evento', { ascending: false })
+        .limit(50);
+      eventosDB = eventos || [];
+      abrirExpedienteReal();
+
+      // Subir foto a Storage
+      const { error: uploadError } = await supabase.storage
+        .from('luisa-fotos')
+        .upload(path, file, { contentType: file.type });
+
+      if (uploadError) {
+        await supabase.from('eventos_salud').update({ estado_ia: 'error' }).eq('id', eventoInsertado.id);
+        alert('Error al subir la foto. Intenta de nuevo.');
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('luisa-fotos').getPublicUrl(path);
+
+      // Llamar a Netlify Function para procesar con Claude
+      try {
+        const resp = await fetch('/.netlify/functions/procesar-documento', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ foto_url: publicUrl, evento_id: eventoInsertado.id, user_id: usuarioActual.id })
+        });
+        const resultado = await resp.json();
+
+        await supabase.from('eventos_salud').update({
+          foto_url: publicUrl,
+          datos_ia: resultado,
+          estado_ia: 'completado'
+        }).eq('id', eventoInsertado.id);
+      } catch {
+        await supabase.from('eventos_salud').update({ foto_url: publicUrl, estado_ia: 'error' }).eq('id', eventoInsertado.id);
+      }
+
+      // Refrescar feed con resultado final
+      const { data: eventosFinales } = await supabase
+        .from('eventos_salud')
+        .select('*')
+        .eq('id_perfil', usuarioActual.id)
+        .order('fecha_evento', { ascending: false })
+        .limit(50);
+      eventosDB = eventosFinales || [];
+      abrirExpedienteReal();
+    }
+
+    function registrarMedicamento() {
+      cerrarNuevoEvento();
+      alert('Registro de medicamentos — próxima iteración tras validar con usuarios.');
+    }
+
+    function notaLibre() {
+      cerrarNuevoEvento();
+      alert('Nota libre — próxima iteración tras validar con usuarios.');
+    }
+
+    function abrirPerfil() {
+      alert('Pantalla de perfil — siguiente tarea en construcción.');
+    }
+
+    // ───────────────────────────────────────────────────────
+    // PANTALLA 4: Chat con Luisa
+    // ───────────────────────────────────────────────────────
+    function abrirChatLuisa() {
+      ocultarTodo();
+      document.getElementById('screen-chat').classList.remove('hidden');
+    }
+
+    // ───────────────────────────────────────────────────────
+    // Utilidades
+    // ───────────────────────────────────────────────────────
+    function volver(pantalla) {
+      if (pantalla === 'lista') mostrarLista();
+      else if (pantalla === 'feed') {
+        if (perfilActual) abrirExpediente(perfilActual.id);
+        else abrirExpedienteReal();
+      }
+    }
+
+    function ocultarTodo() {
+      ['screen-login', 'screen-lista', 'screen-feed', 'screen-nuevo', 'screen-chat'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+  </script>
+
+</body>
+</html>
