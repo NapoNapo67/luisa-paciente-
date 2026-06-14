@@ -363,7 +363,7 @@
     // ───────────────────────────────────────────────────────
     const SUPABASE_URL = 'https://isxspjlwuzbbtpamkknq.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzeHNwamx3dXpiYnRwYW1ra25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDYwMjMsImV4cCI6MjA5NTM4MjAyM30.D5iWO9K7137hFW_pBx9xYASHFfnyUcDthi9_A-6pksA';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ───────────────────────────────────────────────────────
     // ESTADO GLOBAL
@@ -459,7 +459,7 @@
     // ───────────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', async () => {
       // Manejar callback del magic link (hash con access_token)
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await db.auth.getSession();
       if (session) {
         usuarioActual = session.user;
         await cargarPerfilYMostrarLista();
@@ -468,7 +468,7 @@
       }
 
       // Escuchar cambios de sesión (cuando el usuario llega del enlace del email)
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      db.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           usuarioActual = session.user;
           await cargarPerfilYMostrarLista();
@@ -505,7 +505,7 @@
       btn.textContent = 'Enviando...';
       btn.classList.add('opacity-60');
 
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await db.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: 'https://luisaapp.netlify.app' }
       });
@@ -530,7 +530,7 @@
     }
 
     async function cerrarSesion() {
-      await supabase.auth.signOut();
+      await db.auth.signOut();
     }
 
     // ───────────────────────────────────────────────────────
@@ -859,17 +859,17 @@
       abrirExpedienteReal();
 
       // Subir foto a Storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await db.storage
         .from('luisa-fotos')
         .upload(path, file, { contentType: file.type });
 
       if (uploadError) {
-        await supabase.from('eventos_salud').update({ estado_ia: 'error' }).eq('id', eventoInsertado.id);
+        await db.from('eventos_salud').update({ estado_ia: 'error' }).eq('id', eventoInsertado.id);
         alert('Error al subir la foto. Intenta de nuevo.');
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage.from('luisa-fotos').getPublicUrl(path);
+      const { data: { publicUrl } } = db.storage.from('luisa-fotos').getPublicUrl(path);
 
       // Llamar a Netlify Function para procesar con Claude
       try {
@@ -880,13 +880,13 @@
         });
         const resultado = await resp.json();
 
-        await supabase.from('eventos_salud').update({
+        await db.from('eventos_salud').update({
           foto_url: publicUrl,
           datos_ia: resultado,
           estado_ia: 'completado'
         }).eq('id', eventoInsertado.id);
       } catch {
-        await supabase.from('eventos_salud').update({ foto_url: publicUrl, estado_ia: 'error' }).eq('id', eventoInsertado.id);
+        await db.from('eventos_salud').update({ foto_url: publicUrl, estado_ia: 'error' }).eq('id', eventoInsertado.id);
       }
 
       // Refrescar feed con resultado final
