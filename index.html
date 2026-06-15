@@ -357,6 +357,170 @@
   <!-- ════════════════════════════════════════════════════════════════════ -->
   <!--                          SCRIPTS                                       -->
   <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!--                     PANTALLA: PERFIL BASE                             -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-perfil" class="hidden h-screen flex flex-col bg-gray-50">
+    <header class="px-5 pt-12 pb-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="volver('feed')" class="text-2xl text-gray-700">←</button>
+        <div class="flex-1">
+          <div class="font-bold text-gray-900">Mi perfil médico</div>
+          <div class="text-xs text-gray-500">Esta información la ve el médico en 30 segundos</div>
+        </div>
+        <div id="perfil-pct-badge" class="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-800">0%</div>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto scroll-feed pb-10">
+
+      <!-- Barra de progreso global -->
+      <div class="px-5 py-3 bg-white border-b border-gray-100">
+        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div id="perfil-barra" class="h-2 rounded-full bg-teal transition-all duration-500" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- ── Sección 1: Identidad básica ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">👤 Identidad básica</div>
+          <span id="s1-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Nombre completo</label>
+            <input id="p-nombre" type="text" placeholder="Roberto Aguilar Cota"
+              class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400"/>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Fecha de nacimiento</label>
+              <input id="p-nacimiento" type="date"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Sexo</label>
+              <select id="p-sexo" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400">
+                <option value="">—</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Sangre</label>
+              <select id="p-sangre" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400">
+                <option value="">—</option>
+                <option>O+</option><option>O-</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Peso (kg)</label>
+              <input id="p-peso" type="number" placeholder="75"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Talla (cm)</label>
+              <input id="p-talla" type="number" placeholder="170"
+                class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400"/>
+            </div>
+          </div>
+          <button onclick="guardarSeccion(1)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar identidad
+          </button>
+          <div id="s1-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+      <!-- ── Sección 2: Alergias ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">⚠️ Alergias</div>
+          <span id="s2-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <textarea id="p-alergias" rows="3" placeholder="Ej: Penicilina (urticaria), polvo, nueces..."
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 resize-none"></textarea>
+          <button onclick="guardarSeccion(2)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar alergias
+          </button>
+          <div id="s2-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+      <!-- ── Sección 3: Condiciones crónicas ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">🏥 Condiciones crónicas</div>
+          <span id="s3-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <textarea id="p-cronicas" rows="3" placeholder="Ej: Hipertensión (desde 2018), diabetes tipo 2..."
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 resize-none"></textarea>
+          <button onclick="guardarSeccion(3)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar condiciones
+          </button>
+          <div id="s3-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+      <!-- ── Sección 4: Medicamentos actuales ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">💊 Medicamentos actuales</div>
+          <span id="s4-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <textarea id="p-meds" rows="3" placeholder="Ej: Metformina 850mg (mañana y noche), Losartán 50mg (mañana)..."
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 resize-none"></textarea>
+          <button onclick="guardarSeccion(4)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar medicamentos
+          </button>
+          <div id="s4-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+      <!-- ── Sección 5: Cirugías y hospitalizaciones ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">🔪 Cirugías y hospitalizaciones</div>
+          <span id="s5-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <textarea id="p-cirugias" rows="3" placeholder="Ej: Apendicectomía (2005, IMSS), hospitalización por neumonía (2020)..."
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 resize-none"></textarea>
+          <button onclick="guardarSeccion(5)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar cirugías
+          </button>
+          <div id="s5-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+      <!-- ── Sección 6: Antecedentes familiares ── -->
+      <div class="mx-4 mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div class="font-bold text-gray-900 text-sm">🧬 Antecedentes familiares</div>
+          <span id="s6-badge" class="text-xs text-gray-400">Sin completar</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <textarea id="p-familia" rows="3" placeholder="Ej: Papá: diabetes tipo 2, hipertensión. Mamá: cáncer de mama (fallecida 2010)..."
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 resize-none"></textarea>
+          <button onclick="guardarSeccion(6)" class="w-full py-2.5 bg-teal rounded-xl text-white text-sm font-bold active:scale-[0.98]">
+            Guardar antecedentes
+          </button>
+          <div id="s6-msg" class="hidden text-xs text-center text-teal-700 font-semibold">✓ Guardado</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <script>
     // ───────────────────────────────────────────────────────
     // SUPABASE — cliente real
@@ -911,7 +1075,99 @@
     }
 
     function abrirPerfil() {
-      alert('Pantalla de perfil — siguiente tarea en construcción.');
+      ocultarTodo();
+      document.getElementById('screen-perfil').classList.remove('hidden');
+
+      // Poblar campos con datos existentes
+      const p = perfilDB || {};
+      document.getElementById('p-nombre').value    = p.nombre_completo || '';
+      document.getElementById('p-nacimiento').value = p.fecha_nacimiento || '';
+      document.getElementById('p-sexo').value       = p.sexo || '';
+      document.getElementById('p-sangre').value     = p.tipo_sangre || '';
+      document.getElementById('p-peso').value       = p.peso_kg || '';
+      document.getElementById('p-talla').value      = p.talla_cm || '';
+      document.getElementById('p-alergias').value   = p.alergias || '';
+      document.getElementById('p-cronicas').value   = p.condiciones_cronicas || '';
+      document.getElementById('p-meds').value       = p.medicamentos_actuales || '';
+      document.getElementById('p-cirugias').value   = p.cirugias_hospitalizaciones || '';
+      document.getElementById('p-familia').value    = p.antecedentes_familiares || '';
+
+      actualizarBadjesperfil(p);
+    }
+
+    function actualizarBadjesperfil(p) {
+      const pct = p.perfil_completo_pct || 0;
+      document.getElementById('perfil-pct-badge').textContent = pct + '%';
+      document.getElementById('perfil-barra').style.width = pct + '%';
+
+      // Badges por sección
+      const s1 = p.nombre_completo ? '✓ Completo' : 'Sin completar';
+      const s2 = p.alergias ? '✓ Completo' : 'Sin completar';
+      const s3 = p.condiciones_cronicas ? '✓ Completo' : 'Sin completar';
+      const s4 = p.medicamentos_actuales ? '✓ Completo' : 'Sin completar';
+      const s5 = p.cirugias_hospitalizaciones ? '✓ Completo' : 'Sin completar';
+      const s6 = p.antecedentes_familiares ? '✓ Completo' : 'Sin completar';
+
+      [s1,s2,s3,s4,s5,s6].forEach((txt, i) => {
+        const el = document.getElementById(`s${i+1}-badge`);
+        el.textContent = txt;
+        el.className = txt.startsWith('✓')
+          ? 'text-xs text-teal-600 font-semibold'
+          : 'text-xs text-gray-400';
+      });
+    }
+
+    async function guardarSeccion(num) {
+      let campos = {};
+
+      if (num === 1) {
+        campos = {
+          nombre_completo:   document.getElementById('p-nombre').value.trim(),
+          fecha_nacimiento:  document.getElementById('p-nacimiento').value || null,
+          sexo:              document.getElementById('p-sexo').value || null,
+          tipo_sangre:       document.getElementById('p-sangre').value || null,
+          peso_kg:           parseFloat(document.getElementById('p-peso').value) || null,
+          talla_cm:          parseInt(document.getElementById('p-talla').value) || null,
+        };
+      } else if (num === 2) {
+        campos = { alergias: document.getElementById('p-alergias').value.trim() || null };
+      } else if (num === 3) {
+        campos = { condiciones_cronicas: document.getElementById('p-cronicas').value.trim() || null };
+      } else if (num === 4) {
+        campos = { medicamentos_actuales: document.getElementById('p-meds').value.trim() || null };
+      } else if (num === 5) {
+        campos = { cirugias_hospitalizaciones: document.getElementById('p-cirugias').value.trim() || null };
+      } else if (num === 6) {
+        campos = { antecedentes_familiares: document.getElementById('p-familia').value.trim() || null };
+      }
+
+      const msg = document.getElementById(`s${num}-msg`);
+
+      if (usuarioActual) {
+        const { data, error } = await db
+          .from('perfiles_luisa')
+          .update(campos)
+          .eq('id', usuarioActual.id)
+          .select()
+          .single();
+
+        if (error) {
+          msg.textContent = '✗ Error al guardar';
+          msg.className = 'text-xs text-center text-red-600 font-semibold';
+          msg.classList.remove('hidden');
+          return;
+        }
+        perfilDB = data;
+      } else {
+        // Sin sesión: guardar solo en memoria (para demo)
+        perfilDB = { ...(perfilDB || {}), ...campos };
+      }
+
+      actualizarBadjesperfil(perfilDB);
+      msg.textContent = '✓ Guardado';
+      msg.className = 'text-xs text-center text-teal-700 font-semibold';
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
     }
 
     // ───────────────────────────────────────────────────────
@@ -934,7 +1190,7 @@
     }
 
     function ocultarTodo() {
-      ['screen-login', 'screen-lista', 'screen-feed', 'screen-nuevo', 'screen-chat'].forEach(id => {
+      ['screen-login', 'screen-lista', 'screen-feed', 'screen-nuevo', 'screen-chat', 'screen-perfil'].forEach(id => {
         document.getElementById(id).classList.add('hidden');
       });
     }
